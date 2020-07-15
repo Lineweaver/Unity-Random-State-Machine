@@ -1,0 +1,36 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.AI;
+
+public class FSM : MonoBehaviour
+{
+    protected NavMeshAgent agent;
+    protected GameObject player;
+    protected GameObject[] waypoints;
+    public GameObject coin;
+    protected bool isLooping = true;
+    protected float waitTime = 0.3f;
+    protected float startWaitTime = 0.3f;
+    protected int index = 0;
+    protected int randomIndex = 0;
+
+    protected virtual void Initialize() { }
+    protected virtual void FSMUpdate() { }
+    protected virtual void FSMFixedUpdate() { }
+
+    private void Start()
+    {
+        Initialize();
+    }
+
+    private void Update()
+    {
+        FSMUpdate();
+    }
+
+    /*private void FixedUpdate()
+    {
+        FSMFixedUpdate();
+    }*/
+}
