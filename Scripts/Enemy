@@ -1,0 +1,162 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.AI;
+
+public class Enemy : FSM
+{
+    public enum FSMState
+    {
+        None,
+        Patrol,
+        Chase,
+        Wander,
+    }
+
+    FSMState currentState;
+
+    protected override void Initialize()
+    {
+        currentState = FSMState.Wander;
+
+        player = GameObject.FindGameObjectWithTag("Player");
+        waypoints = GameObject.FindGameObjectsWithTag("Waypoint");
+        agent = GetComponent<NavMeshAgent>();
+
+        randomIndex = Random.Range(0, waypoints.Length);
+    }
+
+    protected override void FSMUpdate()
+    {
+        switch(currentState)
+        {
+            case FSMState.Patrol:
+                UpdatePatrolState();
+                break;
+            case FSMState.Chase:
+                UpdateChaseState();
+                break;
+            case FSMState.Wander:
+                UpdateWanderState();
+                break;
+            default:
+                break;
+        }
+    }
+
+    void UpdatePatrolState()
+    {
+        Debug.Log(currentState);
+        //FollowWaypoints();
+        RandomWaypoins();
+        DropCoins();
+
+        if (Vector3.Distance(transform.position, player.transform.position) < agent.stoppingDistance)
+        {
+            currentState = FSMState.Chase;
+        }
+    }
+
+    void UpdateChaseState()
+    {
+        Debug.Log(currentState);
+        agent.SetDestination(player.transform.position);
+
+        if (Vector3.Distance(player.transform.position, transform.position) > agent.stoppingDistance * 4)
+        {
+            currentState = FSMState.Wander;
+        }
+    }
+
+    void UpdateWanderState()
+    {
+        Debug.Log(currentState);
+        Wander();
+        DropCoins();
+
+        if (Vector3.Distance(transform.position, player.transform.position) < agent.stoppingDistance)
+        {
+            currentState = FSMState.Chase;
+        }
+
+        if(Vector3.Distance(transform.position, waypoints[Random.Range(0, waypoints.Length)].transform.position) < agent.stoppingDistance)
+        {
+            Debug.Log(currentState);
+            currentState = FSMState.Patrol;
+        }
+    }
+
+    void FollowWaypoints()
+    {
+        if (index < waypoints.Length)
+        {
+            agent.SetDestination(waypoints[index].transform.position);
+
+            if (Vector3.Distance(transform.position, waypoints[index].transform.position) < agent.stoppingDistance)
+            {
+                if (waitTime <= 0)
+                {
+                    index++;
+                }
+                else
+                {
+                    waitTime -= Time.deltaTime;
+                }
+            }
+        }
+        else if (isLooping)
+        {
+            index = 0;
+        }
+        else
+        {
+            return;
+        }
+    }
+
+    void DropCoins()
+    {
+        if(Random.Range(0,1000) < 10)
+        {
+            Instantiate(coin, transform.position, Quaternion.identity);
+        }
+    }
+
+    void RandomWaypoins()
+    {
+        if (index < waypoints.Length)
+        {      
+            agent.SetDestination(waypoints[randomIndex].transform.position);
+
+            if (Vector3.Distance(transform.position, waypoints[randomIndex].transform.position) < agent.stoppingDistance)
+            {
+                if (waitTime <= 0)
+                {
+                    randomIndex = Random.Range(0, waypoints.Length);
+                    waitTime = startWaitTime;
+                }
+                else
+                {
+                    waitTime -= Time.deltaTime;
+                }
+            }
+        }
+    }
+
+    void Wander()
+    {
+        Vector3 wanderTarget = Vector3.zero;
+        float wanderRadius = 10;
+        float wanderDistance = 10;
+        float wanderJitter = 1;
+
+        wanderTarget += new Vector3(Random.Range(-1, 1) * wanderJitter, 0, Random.Range(-1, 1) * wanderJitter);
+        wanderTarget.Normalize();
+        wanderTarget *= wanderRadius;
+
+        Vector3 targetLocal = wanderTarget + new Vector3(0, 0, wanderDistance);
+        Vector3 targetWorld = gameObject.transform.InverseTransformVector(targetLocal);
+
+        agent.SetDestination(targetWorld);
+    }
+}
